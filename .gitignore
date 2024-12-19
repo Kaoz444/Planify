@@ -1,0 +1,14 @@
+# Ignorar variables de entorno
+.env
+
+# Ignorar dependencias locales
+node_modules/
+
+# Ignorar archivos de macOS
+.DS_Store
+
+# Ignorar logs y archivos temporales
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
