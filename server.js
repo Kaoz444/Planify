@@ -71,7 +71,7 @@ app.post('/webhook', async (req, res) => {
         from: 'whatsapp:+14782494542',
         to: From,
       });
-      return res.status(204).send();
+      return res.status(200).send();
     }
 
     // **Filtro inicial en el backend**
@@ -100,7 +100,7 @@ app.post('/webhook', async (req, res) => {
           to: From,
         });
 
-        return res.status(204).send();
+        return res.status(200).send();
       }
 
       // Actualizar advertencias en la base de datos
@@ -115,7 +115,7 @@ app.post('/webhook', async (req, res) => {
         to: From,
       });
 
-      return res.status(204).send();
+      return res.status(200).send();
     }
 
     // Continuar con OpenAI si el mensaje es apropiado
@@ -154,7 +154,7 @@ app.post('/webhook', async (req, res) => {
     console.error('Error enviando respuesta a WhatsApp:', error);
   }
 
-  res.status(204).send();
+  res.status(200).send();
 });
 
 // Iniciar servidor
