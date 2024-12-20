@@ -37,11 +37,16 @@ client.connect()
 // Endpoint para recibir mensajes
 app.post('/webhook', async (req, res) => {
   console.log('Solicitud recibida en /webhook');
-  const { Body, From } = req.body;
+  let { Body, From } = req.body;
 
   if (!Body) {
     console.error('No se recibió mensaje');
     return res.status(400).send('Solicitud inválida');
+  }
+
+  // Normalizar número de teléfono para asegurar formato correcto
+  if (!From.startsWith('+')) {
+    From = '+' + From.replace(/\s/g, '').replace('whatsapp:', '');
   }
 
   let respuestaIA;
@@ -54,7 +59,6 @@ app.post('/webhook', async (req, res) => {
 
     if (!usuario) {
       console.log(`Nuevo usuario detectado: ${From}`);
-      // Crear nuevo usuario
       usuario = {
         usuario: From,
         mensajes: [
@@ -80,9 +84,9 @@ app.post('/webhook', async (req, res) => {
 
     // **Filtro inicial en el backend**
     const palabrasProhibidas = [
-      "tonto", "estúpido", "idiota", "imbécil", "basura", "inútil", "maldito", "estúpida", "grosera", "qué asco", 
+      "tonto", "estúpido", "idiota", "imbécil", "basura", "inútil", "maldito", "estúpida", "grosera", "qué asco",
       "sexo", "pornografía", "erótico", "nalgas", "pechos", "desnudo", "hacer el amor", "masturbación", "coger",
-      "follar", "chupar", "pene", "vagina", "prostitución", "puta", "puto", "chismes", "memes", "temas prohibidos", 
+      "follar", "chupar", "pene", "vagina", "prostitución", "puta", "puto", "chismes", "memes", "temas prohibidos",
       "política", "religión", "cuéntame un chiste", "baila", "haz magia"
     ];
 
@@ -108,7 +112,6 @@ app.post('/webhook', async (req, res) => {
         return res.status(200).send();
       }
 
-      // Actualizar advertencias en la base de datos
       await db.collection('conversaciones').updateOne(
         { usuario: From },
         { $set: { advertencias: usuario.advertencias } }
@@ -124,7 +127,6 @@ app.post('/webhook', async (req, res) => {
       return res.status(200).send();
     }
 
-    // Continuar con OpenAI si el mensaje es apropiado
     usuario.mensajes.push({ role: 'user', content: Body });
 
     const contexto = usuario.mensajes.slice(-10);
@@ -137,7 +139,6 @@ app.post('/webhook', async (req, res) => {
     respuestaIA = openaiResponse.choices[0].message.content.trim();
     usuario.mensajes.push({ role: 'assistant', content: respuestaIA });
 
-    // Actualizar la conversación en la base de datos
     await db.collection('conversaciones').updateOne(
       { usuario: From },
       { $set: { mensajes: usuario.mensajes, ultimaActualizacion: new Date() } }
@@ -149,7 +150,6 @@ app.post('/webhook', async (req, res) => {
     respuestaIA = 'Hubo un error procesando tu solicitud.';
   }
 
-  // Enviar respuesta por WhatsApp
   try {
     console.log(`Enviando mensaje a WhatsApp desde: whatsapp:+14782494542 hacia: whatsapp:${From}`);
     await twilioClient.messages.create({
@@ -165,7 +165,6 @@ app.post('/webhook', async (req, res) => {
   res.status(200).send();
 });
 
-// Iniciar servidor
 const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
