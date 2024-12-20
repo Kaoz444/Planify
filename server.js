@@ -25,12 +25,14 @@ const uri = process.env.MONGO_URI;
 const client = new MongoClient(uri);
 let db;
 
-client.connect().then(() => {
-  db = client.db('horoscopoDB');
-  console.log('Conectado a MongoDB');
-}).catch((error) => {
-  console.error('Error conectando a MongoDB:', error);
-});
+client.connect()
+  .then(() => {
+    db = client.db('horoscopoDB');
+    console.log('Conectado a MongoDB');
+  })
+  .catch((error) => {
+    console.error('Error conectando a MongoDB:', error);
+  });
 
 // Endpoint para recibir mensajes
 app.post('/webhook', async (req, res) => {
@@ -45,11 +47,13 @@ app.post('/webhook', async (req, res) => {
   let respuestaIA;
 
   try {
+    console.log(`Mensaje recibido de: ${From}, Contenido: ${Body}`);
+
     // Verificar si el usuario existe
     let usuario = await db.collection('conversaciones').findOne({ usuario: From });
 
     if (!usuario) {
-      console.log(`Nuevo usuario: ${From}`);
+      console.log(`Nuevo usuario detectado: ${From}`);
       // Crear nuevo usuario
       usuario = {
         usuario: From,
@@ -69,7 +73,7 @@ app.post('/webhook', async (req, res) => {
       await twilioClient.messages.create({
         body: 'Tu acceso a Planify ha sido restringido debido al mal uso de la aplicación.',
         from: 'whatsapp:+14782494542',
-        to: From,
+        to: `whatsapp:${From}`,
       });
       return res.status(200).send();
     }
@@ -94,10 +98,11 @@ app.post('/webhook', async (req, res) => {
           { $set: { advertencias: usuario.advertencias, bloqueado: usuario.bloqueado } }
         );
 
+        console.log(`Usuario bloqueado por mensajes inapropiados: ${From}`);
         await twilioClient.messages.create({
           body: 'Has sido bloqueado debido a múltiples mensajes inapropiados.',
           from: 'whatsapp:+14782494542',
-          to: From,
+          to: `whatsapp:${From}`,
         });
 
         return res.status(200).send();
@@ -109,10 +114,11 @@ app.post('/webhook', async (req, res) => {
         { $set: { advertencias: usuario.advertencias } }
       );
 
+      console.log(`Advertencia enviada a usuario: ${From}, advertencias restantes: ${3 - usuario.advertencias}`);
       await twilioClient.messages.create({
         body: `Advertencia: Tu mensaje no es relevante para el propósito de Planify. Tienes ${3 - usuario.advertencias} oportunidades restantes.`,
         from: 'whatsapp:+14782494542',
-        to: From,
+        to: `whatsapp:${From}`,
       });
 
       return res.status(200).send();
@@ -137,21 +143,23 @@ app.post('/webhook', async (req, res) => {
       { $set: { mensajes: usuario.mensajes, ultimaActualizacion: new Date() } }
     );
 
-    console.log('Respuesta de OpenAI:', respuestaIA);
+    console.log('Respuesta generada por OpenAI:', respuestaIA);
   } catch (error) {
-    console.error('Error al procesar la solicitud:', error);
+    console.error('Error al procesar la solicitud:', error.message);
     respuestaIA = 'Hubo un error procesando tu solicitud.';
   }
 
   // Enviar respuesta por WhatsApp
   try {
+    console.log(`Enviando mensaje a WhatsApp desde: whatsapp:+14782494542 hacia: whatsapp:${From}`);
     await twilioClient.messages.create({
       body: respuestaIA,
       from: 'whatsapp:+14782494542',
-      to: From,
+      to: `whatsapp:${From}`,
     });
   } catch (error) {
-    console.error('Error enviando respuesta a WhatsApp:', error);
+    console.error('Error enviando respuesta a WhatsApp:', error.message);
+    console.error('Detalles del error:', error);
   }
 
   res.status(200).send();
