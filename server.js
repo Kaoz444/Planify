@@ -68,7 +68,7 @@ app.post('/webhook', async (req, res) => {
       console.log(`Usuario bloqueado: ${From}`);
       await twilioClient.messages.create({
         body: 'Tu acceso a Planify ha sido restringido debido al mal uso de la aplicación.',
-        from: 'whatsapp:+14155238886',
+        from: 'whatsapp:+14782494542',
         to: From,
       });
       return res.status(204).send();
@@ -96,7 +96,7 @@ app.post('/webhook', async (req, res) => {
 
         await twilioClient.messages.create({
           body: 'Has sido bloqueado debido a múltiples mensajes inapropiados.',
-          from: 'whatsapp:+14155238886',
+          from: 'whatsapp:+14782494542',
           to: From,
         });
 
@@ -111,7 +111,7 @@ app.post('/webhook', async (req, res) => {
 
       await twilioClient.messages.create({
         body: `Advertencia: Tu mensaje no es relevante para el propósito de Planify. Tienes ${3 - usuario.advertencias} oportunidades restantes.`,
-        from: 'whatsapp:+14155238886',
+        from: 'whatsapp:+14782494542',
         to: From,
       });
 
